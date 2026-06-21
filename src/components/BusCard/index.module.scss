@@ -1,0 +1,101 @@
+@use '@/styles/variables.scss' as *;
+
+.busCard {
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFF9E6 100%);
+  border-radius: $radius-xl;
+  padding: 32rpx;
+  box-shadow: $shadow-card;
+  border: 2rpx solid rgba(255, 212, 59, 0.2);
+}
+
+.cardHeader {
+  display: flex;
+  align-items: center;
+  margin-bottom: 24rpx;
+}
+
+.busIcon {
+  width: 88rpx;
+  height: 88rpx;
+  border-radius: $radius-lg;
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48rpx;
+  margin-right: 20rpx;
+  box-shadow: 0 4rpx 12rpx rgba(255, 212, 59, 0.3);
+}
+
+.busBasicInfo {
+  flex: 1;
+}
+
+.plateNumber {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-bold;
+  color: $color-text-primary;
+  line-height: 1.3;
+}
+
+.driverInfo {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-top: 4rpx;
+}
+
+.infoGrid {
+  display: flex;
+  gap: 16rpx;
+}
+
+.infoItem {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: $radius-md;
+  padding: 20rpx;
+  text-align: center;
+}
+
+.infoItemIcon {
+  font-size: 36rpx;
+  margin-bottom: 8rpx;
+}
+
+.infoItemLabel {
+  font-size: 22rpx;
+  color: $color-text-tertiary;
+  margin-bottom: 4rpx;
+}
+
+.infoItemValue {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+}
+
+.seatBar {
+  margin-top: 20rpx;
+}
+
+.seatLabel {
+  display: flex;
+  justify-content: space-between;
+  font-size: 22rpx;
+  color: $color-text-secondary;
+  margin-bottom: 8rpx;
+}
+
+.seatTrack {
+  height: 12rpx;
+  background: #F0F0F0;
+  border-radius: $radius-round;
+  overflow: hidden;
+}
+
+.seatProgress {
+  height: 100%;
+  background: linear-gradient(90deg, $color-secondary-green 0%, $color-primary 100%);
+  border-radius: $radius-round;
+  transition: width $transition-base;
+}

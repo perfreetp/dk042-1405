@@ -1,0 +1,81 @@
+@use '@/styles/variables.scss' as *;
+
+.stationDot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex-shrink: 0;
+  width: 88rpx;
+}
+
+.dot {
+  width: 64rpx;
+  height: 64rpx;
+  border-radius: $radius-round;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36rpx;
+  position: relative;
+  z-index: 2;
+  transition: all $transition-base;
+  background: $color-station-future;
+  border: 4rpx solid $color-border;
+
+  &.passed {
+    background: $color-station-passed;
+    border-color: $color-station-passed;
+    box-shadow: 0 4rpx 12rpx rgba(129, 199, 132, 0.4);
+  }
+
+  &.current {
+    background: $color-station-current;
+    border-color: $color-primary-dark;
+    box-shadow: 0 4rpx 16rpx rgba(255, 212, 59, 0.5);
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  &.bound {
+    background: $color-secondary-pink;
+    border-color: #E91E63;
+    box-shadow: 0 4rpx 16rpx rgba(244, 143, 177, 0.5);
+  }
+
+  &.bound.passed {
+    background: $color-success;
+    border-color: $color-success;
+  }
+}
+
+.dotIcon {
+  font-size: 32rpx;
+  line-height: 1;
+}
+
+.stationName {
+  margin-top: 12rpx;
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  text-align: center;
+  width: 100rpx;
+  @include text-ellipsis;
+
+  &.active {
+    color: $color-text-primary;
+    font-weight: $font-weight-medium;
+  }
+
+  &.bound {
+    color: #E91E63;
+    font-weight: $font-weight-semibold;
+  }
+}
+
+.homeTag {
+  position: absolute;
+  top: -24rpx;
+  right: -8rpx;
+  font-size: 24rpx;
+  animation: sparkle 1.5s ease-in-out infinite;
+}

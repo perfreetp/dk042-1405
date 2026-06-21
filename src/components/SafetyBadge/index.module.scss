@@ -1,0 +1,75 @@
+@use '@/styles/variables.scss' as *;
+
+.badgeContainer {
+  text-align: center;
+  padding: 40rpx 0;
+  animation: fadeIn 0.5s ease;
+}
+
+.badgeCircle {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: $radius-round;
+  background: linear-gradient(135deg, #4CAF50 0%, #81C784 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24rpx;
+  box-shadow: 0 8rpx 32rpx rgba(76, 175, 80, 0.4);
+  animation: pulse 2s ease-in-out infinite;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -8rpx;
+    left: -8rpx;
+    right: -8rpx;
+    bottom: -8rpx;
+    border-radius: $radius-round;
+    border: 4rpx dashed rgba(76, 175, 80, 0.5);
+    animation: sparkle 3s linear infinite;
+  }
+}
+
+.badgeIcon {
+  font-size: 96rpx;
+  line-height: 1;
+}
+
+.badgeTitle {
+  font-size: $font-size-xl;
+  font-weight: $font-weight-bold;
+  color: $color-success;
+  margin-bottom: 8rpx;
+}
+
+.badgeSubtitle {
+  font-size: $font-size-md;
+  color: $color-text-secondary;
+}
+
+.badgeTime {
+  font-size: $font-size-sm;
+  color: $color-text-tertiary;
+  margin-top: 8rpx;
+}
+
+.starsContainer {
+  display: flex;
+  justify-content: center;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}
+
+.star {
+  font-size: 32rpx;
+  opacity: 0;
+  animation: sparkle 0.6s ease forwards;
+
+  &:nth-child(1) { animation-delay: 0.2s; }
+  &:nth-child(2) { animation-delay: 0.4s; }
+  &:nth-child(3) { animation-delay: 0.6s; }
+  &:nth-child(4) { animation-delay: 0.8s; }
+  &:nth-child(5) { animation-delay: 1s; }
+}

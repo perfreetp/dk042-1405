@@ -1,0 +1,172 @@
+@use '@/styles/variables.scss' as *;
+
+.busRouteContainer {
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFF9E6 100%);
+  border-radius: $radius-xl;
+  padding: 40rpx 32rpx;
+  box-shadow: $shadow-card;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 8rpx;
+    background: linear-gradient(90deg, $color-primary 0%, $color-secondary-blue 50%, $color-secondary-green 100%);
+  }
+}
+
+.routeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32rpx;
+}
+
+.routeTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+
+  .schoolName {
+    color: $color-primary-dark;
+    margin-right: 8rpx;
+  }
+}
+
+.routeBadge {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  color: $color-text-white;
+  font-size: $font-size-sm;
+  padding: 8rpx 20rpx;
+  border-radius: $radius-round;
+  font-weight: $font-weight-medium;
+}
+
+.stationsContainer {
+  position: relative;
+  padding: 40rpx 0;
+}
+
+.trackLine {
+  position: absolute;
+  top: 72rpx;
+  left: 44rpx;
+  right: 44rpx;
+  height: 12rpx;
+  background: repeating-linear-gradient(
+    90deg,
+    $color-border 0px,
+    $color-border 16rpx,
+    transparent 16rpx,
+    transparent 24rpx
+  );
+  border-radius: $radius-round;
+  z-index: 1;
+}
+
+.progressLine {
+  position: absolute;
+  top: 72rpx;
+  left: 44rpx;
+  height: 12rpx;
+  background: linear-gradient(90deg, $color-station-passed 0%, $color-station-passed 100%);
+  border-radius: $radius-round;
+  z-index: 1;
+  transition: width $transition-slow ease;
+}
+
+.stationsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  z-index: 2;
+}
+
+.busWrapper {
+  position: absolute;
+  top: -10rpx;
+  z-index: 10;
+  transition: left $transition-slow ease;
+}
+
+.busIcon {
+  font-size: 64rpx;
+  animation: bounceBus 1s ease-in-out infinite;
+  filter: drop-shadow(0 4rpx 8rpx rgba(0,0,0,0.2));
+}
+
+.busSmoke {
+  position: absolute;
+  bottom: -8rpx;
+  left: -16rpx;
+  font-size: 24rpx;
+  opacity: 0.6;
+  animation: float 2s ease-in-out infinite;
+}
+
+.infoCards {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 32rpx;
+}
+
+.infoCard {
+  flex: 1;
+  background: linear-gradient(135deg, #FFF8E1 0%, #FFECB3 100%);
+  border-radius: $radius-lg;
+  padding: 24rpx;
+  text-align: center;
+  border: 2rpx solid rgba(255, 212, 59, 0.3);
+
+  &.timeCard {
+    background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+    border-color: rgba(79, 195, 247, 0.3);
+  }
+}
+
+.infoValue {
+  font-size: 48rpx;
+  font-weight: $font-weight-bold;
+  color: $color-primary-dark;
+  line-height: 1.2;
+
+  .timeCard & {
+    color: #1976D2;
+  }
+}
+
+.infoUnit {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-left: 4rpx;
+}
+
+.infoLabel {
+  font-size: $font-size-sm;
+  color: $color-text-secondary;
+  margin-top: 8rpx;
+}
+
+.cloudDecoration {
+  position: absolute;
+  font-size: 48rpx;
+  opacity: 0.4;
+
+  &.cloud1 {
+    top: 60rpx;
+    right: 40rpx;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  &.cloud2 {
+    top: 100rpx;
+    right: 120rpx;
+    font-size: 36rpx;
+    animation: float 3.5s ease-in-out infinite 0.5s;
+  }
+}
