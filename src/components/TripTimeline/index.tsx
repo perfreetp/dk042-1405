@@ -3,7 +3,13 @@ import { View, Text } from '@tarojs/components'
 import classnames from 'classnames'
 import styles from './index.module.scss'
 import type { BusRoute, BusLocation, Reminder } from '@/types/bus'
-import { getStationStatus } from '@/utils'
+import {
+  getStationStatus,
+  getNextStationEta,
+  getTotalArrivalMinutes,
+  MINUTES_PER_STATION,
+  formatTime
+} from '@/utils'
 
 interface TripTimelineProps {
   route: BusRoute
@@ -11,6 +17,7 @@ interface TripTimelineProps {
   boundStationId: string
   reminders: Reminder[]
   handoverStatus?: 'pending' | 'teacher_confirmed' | 'parent_confirmed' | null
+  stationPassedTimes?: Record<number, string>
 }
 
 interface ReminderMarker {
@@ -23,13 +30,15 @@ const TripTimeline: React.FC<TripTimelineProps> = ({
   busLocation,
   boundStationId,
   reminders,
-  handoverStatus
+  handoverStatus,
+  stationPassedTimes = {}
 }) => {
   const boundStationIndex = useMemo(() => {
     return route.stations.findIndex((s) => s.id === boundStationId)
   }, [route.stations, boundStationId])
 
   const stationsToShow = useMemo(() => {
+    if (boundStationIndex < 0) return route.stations
     return route.stations.slice(0, boundStationIndex + 1)
   }, [route.stations, boundStationIndex])
 
@@ -40,9 +49,9 @@ const TripTimeline: React.FC<TripTimelineProps> = ({
     const lightIndex = boundStationIndex - 2
     const formalIndex = boundStationIndex - 1
 
-    const hasLight = reminders.some((r) => r.type === 'light' && r.remainingStations === 2)
-    const hasFormal = reminders.some((r) => r.type === 'formal' && r.remainingStations === 1)
-    const hasArrival = reminders.some((r) => r.remainingStations === 0)
+    const hasLight = reminders.some((r) => r.type === 'light')
+    const hasFormal = reminders.some((r) => r.type === 'formal')
+    const hasArrival = reminders.some((r) => r.type === 'arrival')
 
     if (lightIndex > 0) {
       map.set(lightIndex, [{
@@ -64,6 +73,8 @@ const TripTimeline: React.FC<TripTimelineProps> = ({
   }, [boundStationIndex, reminders])
 
   const isArrived = handoverStatus === 'teacher_confirmed' || handoverStatus === 'parent_confirmed'
+  const totalArrivalMinutes = getTotalArrivalMinutes(busLocation, boundStationIndex)
+  const remainingStations = Math.max(0, boundStationIndex - busLocation.currentStationIndex)
 
   const getStationBadge = (status: string): { text: string; cls: string } => {
     switch (status) {
@@ -76,12 +87,6 @@ const TripTimeline: React.FC<TripTimelineProps> = ({
       default:
         return { text: '待到达', cls: styles.futureBadge }
     }
-  }
-
-  const getNextStationEta = (stationOrder: number): string | null => {
-    if (stationOrder !== busLocation.currentStationIndex + 1) return null
-    if (stationOrder > boundStationIndex) return null
-    return `下一站预计 ${busLocation.estimatedMinutes} 分钟到`
   }
 
   return (
@@ -107,6 +112,29 @@ const TripTimeline: React.FC<TripTimelineProps> = ({
         </View>
       </View>
 
+      {!isArrived && remainingStations > 0 && (
+        <View className={styles.arrivalSummary}>
+          <View className={styles.arrivalSummaryItem}>
+            <Text className={styles.arrivalSummaryIcon}>🏠</Text>
+            <View className={styles.arrivalSummaryText}>
+              <Text className={styles.arrivalSummaryLabel}>整体到家时间</Text>
+              <Text className={styles.arrivalSummaryValue}>
+                约 {totalArrivalMinutes} 分钟（还剩 {remainingStations} 站）
+              </Text>
+            </View>
+          </View>
+          <View className={styles.arrivalSummaryItem}>
+            <Text className={styles.arrivalSummaryIcon}>⏭️</Text>
+            <View className={styles.arrivalSummaryText}>
+              <Text className={styles.arrivalSummaryLabel}>下一站预计</Text>
+              <Text className={styles.arrivalSummaryValue}>
+                {MINUTES_PER_STATION} 分钟到达
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
+
       <View className={styles.timelineList}>
         <View className={styles.timelineLine}></View>
 
@@ -122,7 +150,8 @@ const TripTimeline: React.FC<TripTimelineProps> = ({
           const isArrivedStation = status === 'bound_arrived'
           const badge = getStationBadge(status)
           const markers = reminderMarkers.get(station.order) || []
-          const eta = getNextStationEta(station.order)
+          const eta = getNextStationEta(station.order, busLocation)
+          const passedTime = stationPassedTimes[station.order]
 
           return (
             <View key={station.id} className={styles.timelineItem}>
@@ -161,20 +190,28 @@ const TripTimeline: React.FC<TripTimelineProps> = ({
 
                 {isCurrent && (
                   <Text className={styles.stationMeta}>
-                    校车正在此站停靠 {eta ? '· ' + eta : ''}
+                    校车正在此站停靠
                   </Text>
                 )}
                 {isPassed && (
-                  <Text className={styles.stationMeta}>已安全通过 ✓</Text>
+                  <Text className={styles.stationMeta}>
+                    已安全通过 ✓
+                    {passedTime && (
+                      <Text className={styles.passedTime}> · 通过时间 {formatTime(passedTime)}</Text>
+                    )}
+                  </Text>
                 )}
                 {isArrivedStation && (
                   <Text className={styles.stationMeta}>
                     {childArrivedText(handoverStatus)}
+                    {passedTime && (
+                      <Text className={styles.passedTime}> · 到站时间 {formatTime(passedTime)}</Text>
+                    )}
                   </Text>
                 )}
                 {!isPassed && !isCurrent && !isArrivedStation && isBound && (
                   <Text className={styles.stationMeta}>
-                    下车站·还有 <Text className={styles.etaHighlight}>{Math.max(0, boundStationIndex - busLocation.currentStationIndex)}</Text> 站
+                    下车站·还有 <Text className={styles.etaHighlight}>{remainingStations}</Text> 站
                   </Text>
                 )}
                 {!isPassed && !isCurrent && !isArrivedStation && !isBound && (

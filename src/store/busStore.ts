@@ -1,9 +1,9 @@
 import { create } from 'zustand'
 import Taro from '@tarojs/taro'
 import type { AppState, BusLocation, Reminder, HandoverRecord, ChildInfo, BusRoute, BusInfo } from '@/types/bus'
-import { generateId } from '@/utils'
+import { generateId, MINUTES_PER_STATION } from '@/utils'
 
-const STORAGE_KEY = 'school_bus_app_state_v1'
+const STORAGE_KEY = 'school_bus_app_state_v2'
 
 interface PersistState {
   childInfo: ChildInfo | null
@@ -12,12 +12,16 @@ interface PersistState {
   busLocation: BusLocation | null
   reminders: Reminder[]
   handoverRecord: HandoverRecord | null
+  handoverHistory: HandoverRecord[]
   isBound: boolean
   triggeredReminders: string[]
+  stationPassedTimes: Record<number, string>
 }
 
 interface BusStore extends AppState {
   triggeredReminders: string[]
+  stationPassedTimes: Record<number, string>
+  handoverHistory: HandoverRecord[]
   setBound: (child: ChildInfo, route: BusRoute, bus: BusInfo) => void
   updateBusLocation: (location: BusLocation) => void
   addReminder: (reminder: Reminder) => void
@@ -52,8 +56,10 @@ const saveToStorage = (state: BusStore) => {
       busLocation: state.busLocation,
       reminders: state.reminders,
       handoverRecord: state.handoverRecord,
+      handoverHistory: state.handoverHistory,
       isBound: state.isBound,
-      triggeredReminders: state.triggeredReminders
+      triggeredReminders: state.triggeredReminders,
+      stationPassedTimes: state.stationPassedTimes
     }
     Taro.setStorageSync(STORAGE_KEY, JSON.stringify(toSave))
   } catch (e) {
@@ -70,19 +76,22 @@ export const useBusStore = create<BusStore>((set, get) => ({
   busLocation: persisted.busLocation ?? null,
   reminders: persisted.reminders ?? [],
   handoverRecord: persisted.handoverRecord ?? null,
+  handoverHistory: persisted.handoverHistory ?? [],
   isBound: persisted.isBound ?? false,
   triggeredReminders: persisted.triggeredReminders ?? [],
+  stationPassedTimes: persisted.stationPassedTimes ?? {},
 
   setBound: (child, route, bus) => {
     console.log('[BusStore] 绑定线路', { child: child.name, route: route.name })
+    const boundStationIndex = route.stations.findIndex(s => s.id === child.boundStationId)
     const initialLocation: BusLocation = {
       routeId: route.id,
       busId: bus.id,
       currentStationIndex: 0,
       nextStationIndex: 1,
       progressPercent: 0,
-      estimatedMinutes: route.stations.findIndex(s => s.id === child.boundStationId) * 4,
-      remainingStations: route.stations.findIndex(s => s.id === child.boundStationId),
+      estimatedMinutes: boundStationIndex * MINUTES_PER_STATION,
+      remainingStations: boundStationIndex,
       lastUpdateTime: new Date().toISOString()
     }
 
@@ -94,7 +103,9 @@ export const useBusStore = create<BusStore>((set, get) => ({
       busLocation: initialLocation,
       reminders: [],
       handoverRecord: null,
-      triggeredReminders: []
+      handoverHistory: get().handoverHistory,
+      triggeredReminders: [],
+      stationPassedTimes: {}
     }
     set(newState)
     saveToStorage({ ...get(), ...newState })
@@ -158,17 +169,21 @@ export const useBusStore = create<BusStore>((set, get) => ({
       parentConfirmTime: new Date().toISOString()
     }
 
+    const newHistory = [newHandover, ...state.handoverHistory.filter(h => h.id !== newHandover.id)]
+
     const newReminders = state.reminders.map(r =>
-      r.remainingStations === 0 ? { ...r, isRead: true } : r
+      r.type === 'arrival' ? { ...r, isRead: true } : r
     )
 
     set({
       handoverRecord: newHandover,
+      handoverHistory: newHistory,
       reminders: newReminders
     })
     saveToStorage({
       ...get(),
       handoverRecord: newHandover,
+      handoverHistory: newHistory,
       reminders: newReminders
     })
   },
@@ -183,7 +198,8 @@ export const useBusStore = create<BusStore>((set, get) => ({
       reminders: [],
       handoverRecord: null,
       isBound: false,
-      triggeredReminders: []
+      triggeredReminders: [],
+      stationPassedTimes: {}
     })
     try { Taro.removeStorageSync(STORAGE_KEY) } catch (e) {}
   },
@@ -208,51 +224,49 @@ export const useBusStore = create<BusStore>((set, get) => ({
     let currentIndex = busLocation?.currentStationIndex ?? 0
     let remaining = boundStationIndex - currentIndex
 
+    const buildBusInfo = () => {
+      const bus = get().busInfo
+      return {
+        plateNumber: bus?.plateNumber || '粤A·B1234',
+        teacherName: bus?.teacherName || '李老师',
+        pickupLocation: `${childInfo.boundStationName}东门`
+      }
+    }
+
+    const createArrivalIfNeeded = () => {
+      if (get().handoverRecord) return
+      const bus = get().busInfo
+      const record: HandoverRecord = {
+        id: `ho_${generateId()}`,
+        childId: childInfo.id,
+        childName: childInfo.name,
+        stationName: childInfo.boundStationName,
+        busId: route.id,
+        plateNumber: bus?.plateNumber,
+        teacherName: bus?.teacherName,
+        pickupLocation: `${childInfo.boundStationName}东门`,
+        teacherConfirmTime: new Date().toISOString(),
+        status: 'teacher_confirmed'
+      }
+      get().setHandoverRecord(record)
+
+      const arrivalReminder: Reminder = {
+        id: `arrival_${generateId()}`,
+        type: 'arrival',
+        title: `${childInfo.name}已安全下车`,
+        content: `${childInfo.name}已在${childInfo.boundStationName}站安全下车，由${bus?.teacherName || '李老师'}确认交接`,
+        stationName: childInfo.boundStationName,
+        remainingStations: 0,
+        busInfo: buildBusInfo(),
+        createTime: new Date().toISOString(),
+        isRead: false
+      }
+      get().addReminder(arrivalReminder)
+    }
+
     if (remaining <= 0) {
       console.log('[BusStore] 已到或超过终点，设置交接记录')
-      if (!get().handoverRecord) {
-        const bus = get().busInfo
-        const record: HandoverRecord = {
-          id: `ho_${generateId()}`,
-          childId: childInfo.id,
-          childName: childInfo.name,
-          stationName: childInfo.boundStationName,
-          busId: route.id,
-          plateNumber: bus?.plateNumber,
-          teacherName: bus?.teacherName,
-          pickupLocation: `${childInfo.boundStationName}东门`,
-          teacherConfirmTime: new Date().toISOString(),
-          status: 'teacher_confirmed'
-        }
-        get().setHandoverRecord(record)
-
-        const triggerKey = 'formal_0'
-        if (!get().triggeredReminders.includes(triggerKey)) {
-          const arrivalReminder: Reminder = {
-            id: `arrival_${generateId()}`,
-            type: 'formal',
-            title: `${childInfo.name}已安全下车`,
-            content: `${childInfo.name}已在${childInfo.boundStationName}站安全下车，由${bus?.teacherName || '李老师'}确认交接`,
-            stationName: childInfo.boundStationName,
-            remainingStations: 0,
-            busInfo: {
-              plateNumber: bus?.plateNumber || '粤A·B1234',
-              teacherName: bus?.teacherName || '李老师',
-              pickupLocation: `${childInfo.boundStationName}东门`
-            },
-            createTime: new Date().toISOString(),
-            isRead: false
-          }
-          set((s) => ({
-            reminders: [arrivalReminder, ...s.reminders],
-            triggeredReminders: [...s.triggeredReminders, triggerKey]
-          }))
-          saveToStorage({
-            ...get(),
-            reminders: [arrivalReminder, ...get().reminders]
-          })
-        }
-      }
+      createArrivalIfNeeded()
       return () => {}
     }
 
@@ -266,49 +280,7 @@ export const useBusStore = create<BusStore>((set, get) => ({
       }
 
       if (remaining <= 0) {
-        if (!get().handoverRecord) {
-          const bus = get().busInfo
-          const record: HandoverRecord = {
-            id: `ho_${generateId()}`,
-            childId: childInfo.id,
-            childName: childInfo.name,
-            stationName: childInfo.boundStationName,
-            busId: route.id,
-            plateNumber: bus?.plateNumber,
-            teacherName: bus?.teacherName,
-            pickupLocation: `${childInfo.boundStationName}东门`,
-            teacherConfirmTime: new Date().toISOString(),
-            status: 'teacher_confirmed'
-          }
-          get().setHandoverRecord(record)
-
-          const triggerKey = 'formal_0'
-          if (!get().triggeredReminders.includes(triggerKey)) {
-            const arrivalReminder: Reminder = {
-              id: `arrival_${generateId()}`,
-              type: 'formal',
-              title: `${childInfo.name}已安全下车`,
-              content: `${childInfo.name}已在${childInfo.boundStationName}站安全下车，由${bus?.teacherName || '李老师'}确认交接`,
-              stationName: childInfo.boundStationName,
-              remainingStations: 0,
-              busInfo: {
-                plateNumber: bus?.plateNumber || '粤A·B1234',
-                teacherName: bus?.teacherName || '李老师',
-                pickupLocation: `${childInfo.boundStationName}东门`
-              },
-              createTime: new Date().toISOString(),
-              isRead: false
-            }
-            set((s) => ({
-              reminders: [arrivalReminder, ...s.reminders],
-              triggeredReminders: [...s.triggeredReminders, triggerKey]
-            }))
-            saveToStorage({
-              ...get(),
-              reminders: [arrivalReminder, ...get().reminders]
-            })
-          }
-        }
+        createArrivalIfNeeded()
         clearInterval(interval)
         return
       }
@@ -316,27 +288,35 @@ export const useBusStore = create<BusStore>((set, get) => ({
       currentIndex++
       remaining = boundStationIndex - currentIndex
 
+      const now = new Date().toISOString()
+      const newPassedTimes = {
+        ...get().stationPassedTimes,
+        [currentIndex]: now
+      }
+
       const newLocation: BusLocation = {
         routeId: route.id,
         busId: currentState.busInfo?.id || 'bus_001',
         currentStationIndex: currentIndex,
         nextStationIndex: currentIndex + 1,
         progressPercent: (currentIndex / boundStationIndex) * 100,
-        estimatedMinutes: Math.max(0, remaining * 4),
+        estimatedMinutes: Math.max(0, remaining * MINUTES_PER_STATION),
         remainingStations: Math.max(0, remaining),
-        lastUpdateTime: new Date().toISOString()
+        lastUpdateTime: now
       }
 
-      get().updateBusLocation(newLocation)
+      set({ busLocation: newLocation, stationPassedTimes: newPassedTimes })
+      saveToStorage({ ...get(), busLocation: newLocation, stationPassedTimes: newPassedTimes })
 
       if (remaining === 2) {
         const lightReminder: Reminder = {
           id: `light_${generateId()}`,
           type: 'light',
           title: '还有2站就到啦！',
-          content: `校车正在驶向${childInfo.boundStationName}，还有大约${remaining * 4}分钟到达`,
+          content: `校车正在驶向${childInfo.boundStationName}，还有大约${remaining * MINUTES_PER_STATION}分钟到达`,
           stationName: childInfo.boundStationName,
           remainingStations: 2,
+          busInfo: buildBusInfo(),
           tips: ['记得带外套🧥', '准备接送卡💳', '带上雨具☔'],
           createTime: new Date().toISOString(),
           isRead: false
@@ -352,11 +332,7 @@ export const useBusStore = create<BusStore>((set, get) => ({
           content: `校车即将到达${childInfo.boundStationName}站，请做好接车准备`,
           stationName: childInfo.boundStationName,
           remainingStations: 1,
-          busInfo: {
-            plateNumber: currentState.busInfo?.plateNumber || '粤A·B1234',
-            teacherName: currentState.busInfo?.teacherName || '李老师',
-            pickupLocation: `${childInfo.boundStationName}东门`
-          },
+          busInfo: buildBusInfo(),
           createTime: new Date().toISOString(),
           isRead: false
         }

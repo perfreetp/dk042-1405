@@ -40,6 +40,11 @@ const HandoverPage: React.FC = () => {
     Taro.switchTab({ url: '/pages/home/index' })
   }, [])
 
+  const handleGoToHistory = useCallback(() => {
+    console.log('[HandoverPage] 查看接站历史')
+    Taro.navigateTo({ url: '/pages/history/index' })
+  }, [])
+
   if (!handoverRecord || !childInfo || !busInfo) {
     return (
       <ScrollView className={styles.handoverPage} scrollY>
@@ -206,6 +211,14 @@ const HandoverPage: React.FC = () => {
             如遇任何问题，请及时联系随车老师 {busInfo.teacherName}（{busInfo.teacherPhone}）。
           </Text>
         </View>
+
+        <Button
+          className={classnames(styles.backButton, styles.historyButton)}
+          onClick={handleGoToHistory}
+        >
+          <Text className={styles.handshakeIcon}>📋</Text>
+          查看接站历史
+        </Button>
       </View>
     </ScrollView>
   )

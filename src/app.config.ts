@@ -4,7 +4,8 @@ export default defineAppConfig({
     'pages/messages/index',
     'pages/mine/index',
     'pages/handover/index',
-    'pages/binding/index'
+    'pages/binding/index',
+    'pages/history/index'
   ],
   window: {
     backgroundTextStyle: 'light',

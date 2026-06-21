@@ -318,6 +318,16 @@
     opacity: 0.9;
     transform: scale(0.98);
   }
+
+  &.historyButton {
+    margin-top: 24rpx;
+    background: #FFFFFF;
+    color: $color-text-secondary;
+    border: 2rpx solid $color-border;
+    height: $button-height-md;
+    font-size: $font-size-md;
+    font-weight: $font-weight-medium;
+  }
 }
 
 .handshakeIcon {

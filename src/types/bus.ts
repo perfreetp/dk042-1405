@@ -34,14 +34,16 @@ export interface BusLocation {
   lastUpdateTime: string
 }
 
+export type ReminderType = 'light' | 'formal' | 'arrival'
+
 export interface Reminder {
   id: string
-  type: 'light' | 'formal'
+  type: ReminderType
   title: string
   content: string
   stationName: string
   remainingStations: number
-  busInfo?: {
+  busInfo: {
     plateNumber: string
     teacherName: string
     pickupLocation: string

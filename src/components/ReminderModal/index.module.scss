@@ -29,6 +29,10 @@
   &.formalReminder {
     background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
   }
+
+  &.arrivalReminder {
+    background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+  }
 }
 
 .modalHeader {
@@ -64,6 +68,11 @@
   &.formalType {
     background: rgba(76, 175, 80, 0.2);
     color: #2E7D32;
+  }
+
+  &.arrivalType {
+    background: rgba(33, 150, 243, 0.2);
+    color: #1565C0;
   }
 }
 
@@ -123,6 +132,14 @@
   padding: 24rpx;
 }
 
+.busInfoTitle {
+  font-size: $font-size-sm;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: 16rpx;
+  display: block;
+}
+
 .infoRow {
   display: flex;
   justify-content: space-between;
@@ -169,5 +186,9 @@
 
   &.formalButton {
     background: linear-gradient(135deg, $color-success 0%, #66BB6A 100%);
+  }
+
+  &.arrivalButton {
+    background: linear-gradient(135deg, #2196F3 0%, #64B5F6 100%);
   }
 }

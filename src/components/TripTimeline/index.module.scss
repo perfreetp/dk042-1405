@@ -55,6 +55,51 @@
   padding-left: 8rpx;
 }
 
+.arrivalSummary {
+  display: flex;
+  gap: 16rpx;
+  margin-bottom: 24rpx;
+  padding: 20rpx;
+  background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
+  border-radius: $radius-lg;
+}
+
+.arrivalSummaryItem {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.arrivalSummaryIcon {
+  font-size: 40rpx;
+  margin-right: 12rpx;
+  flex-shrink: 0;
+}
+
+.arrivalSummaryText {
+  flex: 1;
+  min-width: 0;
+}
+
+.arrivalSummaryLabel {
+  font-size: 20rpx;
+  color: $color-text-secondary;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.arrivalSummaryValue {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: #1565C0;
+  display: block;
+}
+
+.passedTime {
+  color: $color-text-tertiary;
+  font-size: $font-size-xs;
+}
+
 .timelineLine {
   position: absolute;
   left: 38rpx;

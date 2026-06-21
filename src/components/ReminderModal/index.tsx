@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, Button } from '@tarojs/components'
 import classnames from 'classnames'
 import styles from './index.module.scss'
-import type { Reminder } from '@/types/bus'
+import type { Reminder, ReminderType } from '@/types/bus'
 
 interface ReminderModalProps {
   visible: boolean
@@ -10,29 +10,41 @@ interface ReminderModalProps {
   onClose: () => void
 }
 
+const TYPE_META: Record<ReminderType, { icon: string; label: string; isLight: boolean; isArrival: boolean }> = {
+  light: { icon: '⏰', label: '🔔 轻提醒', isLight: true, isArrival: false },
+  formal: { icon: '🚍', label: '📢 正式提醒', isLight: false, isArrival: false },
+  arrival: { icon: '✅', label: '🎉 到站确认', isLight: false, isArrival: true }
+}
+
 const ReminderModal: React.FC<ReminderModalProps> = ({ visible, reminder, onClose }) => {
   if (!visible || !reminder) return null
 
-  const isLight = reminder.type === 'light'
+  const meta = TYPE_META[reminder.type]
+  const isLight = meta.isLight
+  const isArrival = meta.isArrival
 
   return (
     <View className={styles.modalOverlay} onClick={onClose}>
       <View
         className={classnames(
           styles.modalContent,
-          isLight ? styles.lightReminder : styles.formalReminder
+          isLight && styles.lightReminder,
+          !isLight && !isArrival && styles.formalReminder,
+          isArrival && styles.arrivalReminder
         )}
         onClick={(e) => e.stopPropagation()}
       >
         <View className={styles.modalHeader}>
           <Text className={classnames(styles.reminderIcon, isLight && styles.light)}>
-            {isLight ? '⏰' : '🚍'}
+            {meta.icon}
           </Text>
           <View className={classnames(
             styles.reminderType,
-            isLight ? styles.lightType : styles.formalType
+            isLight && styles.lightType,
+            !isLight && !isArrival && styles.formalType,
+            isArrival && styles.arrivalType
           )}>
-            {isLight ? '🔔 轻提醒' : '📢 正式提醒'}
+            {meta.label}
           </View>
           <Text className={styles.reminderTitle}>{reminder.title}</Text>
         </View>
@@ -52,29 +64,29 @@ const ReminderModal: React.FC<ReminderModalProps> = ({ visible, reminder, onClos
             </View>
           )}
 
-          {reminder.busInfo && (
-            <View className={styles.busInfoSection}>
-              <View className={styles.infoRow}>
-                <Text className={styles.infoLabel}>🚌 车牌号码</Text>
-                <Text className={styles.infoValue}>{reminder.busInfo.plateNumber}</Text>
-              </View>
-              <View className={styles.infoRow}>
-                <Text className={styles.infoLabel}>👩‍🏫 随车老师</Text>
-                <Text className={styles.infoValue}>{reminder.busInfo.teacherName}</Text>
-              </View>
-              <View className={styles.infoRow}>
-                <Text className={styles.infoLabel}>📍 接站口</Text>
-                <Text className={styles.infoValue}>{reminder.busInfo.pickupLocation}</Text>
-              </View>
+          <View className={styles.busInfoSection}>
+            <Text className={styles.busInfoTitle}>🚌 接车信息</Text>
+            <View className={styles.infoRow}>
+              <Text className={styles.infoLabel}>车牌号码</Text>
+              <Text className={styles.infoValue}>{reminder.busInfo.plateNumber}</Text>
             </View>
-          )}
+            <View className={styles.infoRow}>
+              <Text className={styles.infoLabel}>随车老师</Text>
+              <Text className={styles.infoValue}>{reminder.busInfo.teacherName}</Text>
+            </View>
+            <View className={styles.infoRow}>
+              <Text className={styles.infoLabel}>接站口</Text>
+              <Text className={styles.infoValue}>{reminder.busInfo.pickupLocation}</Text>
+            </View>
+          </View>
         </View>
 
         <View className={styles.modalFooter}>
           <Button
             className={classnames(
               styles.confirmButton,
-              !isLight && styles.formalButton
+              !isLight && !isArrival && styles.formalButton,
+              isArrival && styles.arrivalButton
             )}
             onClick={onClose}
           >

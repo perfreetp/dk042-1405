@@ -4,17 +4,9 @@ import classnames from 'classnames'
 import styles from './index.module.scss'
 import { useBusStore } from '@/store/busStore'
 import { formatRelativeTime, formatDateTime } from '@/utils'
-import type { Reminder } from '@/types/bus'
+import type { Reminder, ReminderType } from '@/types/bus'
 
-type FilterType = 'all' | 'light' | 'formal' | 'arrival'
-
-type MessageCategory = 'light' | 'formal' | 'arrival'
-
-const getCategory = (r: Reminder): MessageCategory => {
-  if (r.type === 'light') return 'light'
-  if (r.remainingStations === 0) return 'arrival'
-  return 'formal'
-}
+type FilterType = 'all' | ReminderType
 
 const FILTERS: { key: FilterType; label: string; icon: string }[] = [
   { key: 'all', label: '全部', icon: '📋' },
@@ -22,6 +14,12 @@ const FILTERS: { key: FilterType; label: string; icon: string }[] = [
   { key: 'formal', label: '正式提醒', icon: '🚍' },
   { key: 'arrival', label: '下车确认', icon: '✅' }
 ]
+
+const TYPE_META: Record<ReminderType, { label: string; icon: string }> = {
+  light: { label: '轻提醒', icon: '⏰' },
+  formal: { label: '正式提醒', icon: '🚍' },
+  arrival: { label: '下车确认', icon: '✅' }
+}
 
 const MessagesPage: React.FC = () => {
   const { reminders, markAllRemindersRead, markReminderRead } = useBusStore()
@@ -32,16 +30,16 @@ const MessagesPage: React.FC = () => {
   const hasUnread = unreadCount > 0
 
   const categoryCounts = useMemo(() => {
-    const counts = { light: 0, formal: 0, arrival: 0 }
+    const counts: Record<ReminderType, number> = { light: 0, formal: 0, arrival: 0 }
     reminders.forEach((r) => {
-      counts[getCategory(r)]++
+      counts[r.type]++
     })
     return counts
   }, [reminders])
 
   const filteredReminders = useMemo(() => {
     if (filter === 'all') return reminders
-    return reminders.filter((r) => getCategory(r) === filter)
+    return reminders.filter((r) => r.type === filter)
   }, [reminders, filter])
 
   const handleMarkAll = useCallback(() => {
@@ -60,18 +58,6 @@ const MessagesPage: React.FC = () => {
   const handleCloseDetail = useCallback(() => {
     setDetailReminder(null)
   }, [])
-
-  const getCategoryMeta = (r: Reminder) => {
-    const cat = getCategory(r)
-    switch (cat) {
-      case 'light':
-        return { label: '轻提醒', icon: '⏰', color: '#E65100' }
-      case 'formal':
-        return { label: '正式提醒', icon: '🚍', color: '#2E7D32' }
-      case 'arrival':
-        return { label: '下车确认', icon: '✅', color: '#1565C0' }
-    }
-  }
 
   const getFilterCount = (key: FilterType): number => {
     if (key === 'all') return reminders.length
@@ -141,16 +127,16 @@ const MessagesPage: React.FC = () => {
           </View>
         ) : (
           filteredReminders.map((reminder) => {
-            const meta = getCategoryMeta(reminder)
+            const meta = TYPE_META[reminder.type]
             return (
               <View
                 key={reminder.id}
                 className={classnames(
                   styles.messageCard,
                   !reminder.isRead && styles.unread,
-                  getCategory(reminder) === 'light' && styles.lightType,
-                  getCategory(reminder) === 'formal' && styles.formalType,
-                  getCategory(reminder) === 'arrival' && styles.arrivalType
+                  reminder.type === 'light' && styles.lightType,
+                  reminder.type === 'formal' && styles.formalType,
+                  reminder.type === 'arrival' && styles.arrivalType
                 )}
                 onClick={() => handleMessageClick(reminder)}
               >
@@ -160,9 +146,9 @@ const MessagesPage: React.FC = () => {
                   <View
                     className={classnames(
                       styles.messageType,
-                      getCategory(reminder) === 'light' && styles.lightType,
-                      getCategory(reminder) === 'formal' && styles.formalType,
-                      getCategory(reminder) === 'arrival' && styles.arrivalType
+                      reminder.type === 'light' && styles.lightType,
+                      reminder.type === 'formal' && styles.formalType,
+                      reminder.type === 'arrival' && styles.arrivalType
                     )}
                   >
                     <Text className={styles.icon}>{meta.icon}</Text>
@@ -201,17 +187,7 @@ const MessageDetailModal: React.FC<{ reminder: Reminder; onClose: () => void }> 
   reminder,
   onClose
 }) => {
-  const meta = (() => {
-    const cat = getCategory(reminder)
-    switch (cat) {
-      case 'light':
-        return { label: '轻提醒', icon: '⏰' }
-      case 'formal':
-        return { label: '正式提醒', icon: '🚍' }
-      case 'arrival':
-        return { label: '下车确认', icon: '✅' }
-    }
-  })()
+  const meta = TYPE_META[reminder.type]
 
   return (
     <View className={styles.detailOverlay} onClick={onClose}>
@@ -247,23 +223,21 @@ const MessageDetailModal: React.FC<{ reminder: Reminder; onClose: () => void }> 
           )}
         </View>
 
-        {reminder.busInfo && (
-          <View className={styles.detailSection}>
-            <Text className={styles.detailSectionTitle}>🚌 接车信息</Text>
-            <View className={styles.detailInfoRow}>
-              <Text className={styles.detailInfoLabel}>车牌号码</Text>
-              <Text className={styles.detailInfoValue}>{reminder.busInfo.plateNumber}</Text>
-            </View>
-            <View className={styles.detailInfoRow}>
-              <Text className={styles.detailInfoLabel}>随车老师</Text>
-              <Text className={styles.detailInfoValue}>{reminder.busInfo.teacherName}</Text>
-            </View>
-            <View className={styles.detailInfoRow}>
-              <Text className={styles.detailInfoLabel}>接站口</Text>
-              <Text className={styles.detailInfoValue}>{reminder.busInfo.pickupLocation}</Text>
-            </View>
+        <View className={styles.detailSection}>
+          <Text className={styles.detailSectionTitle}>🚌 接车信息</Text>
+          <View className={styles.detailInfoRow}>
+            <Text className={styles.detailInfoLabel}>车牌号码</Text>
+            <Text className={styles.detailInfoValue}>{reminder.busInfo.plateNumber}</Text>
           </View>
-        )}
+          <View className={styles.detailInfoRow}>
+            <Text className={styles.detailInfoLabel}>随车老师</Text>
+            <Text className={styles.detailInfoValue}>{reminder.busInfo.teacherName}</Text>
+          </View>
+          <View className={styles.detailInfoRow}>
+            <Text className={styles.detailInfoLabel}>接站口</Text>
+            <Text className={styles.detailInfoValue}>{reminder.busInfo.pickupLocation}</Text>
+          </View>
+        </View>
 
         {reminder.tips && reminder.tips.length > 0 && (
           <View className={styles.detailSection}>

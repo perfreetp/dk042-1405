@@ -20,6 +20,7 @@ const HomePage: React.FC = () => {
     busLocation,
     handoverRecord,
     reminders,
+    stationPassedTimes,
     simulateBusProgress
   } = useBusStore()
 
@@ -238,6 +239,7 @@ const HomePage: React.FC = () => {
           boundStationId={childInfo.boundStationId}
           reminders={reminders}
           handoverStatus={handoverRecord?.status || null}
+          stationPassedTimes={stationPassedTimes}
         />
       </View>
 

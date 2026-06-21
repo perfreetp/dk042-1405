@@ -17,7 +17,7 @@ interface MenuItem {
 }
 
 const MinePage: React.FC = () => {
-  const { childInfo, route, isBound, reminders } = useBusStore()
+  const { childInfo, route, isBound, reminders, handoverHistory } = useBusStore()
   const [notificationsOn, setNotificationsOn] = useState(true)
   const [soundOn, setSoundOn] = useState(true)
 
@@ -26,6 +26,11 @@ const MinePage: React.FC = () => {
   const handleGoToBinding = useCallback(() => {
     console.log('[MinePage] 跳转到线路绑定')
     Taro.navigateTo({ url: '/pages/binding/index' })
+  }, [])
+
+  const handleGoToHistory = useCallback(() => {
+    console.log('[MinePage] 跳转到接站历史')
+    Taro.navigateTo({ url: '/pages/history/index' })
   }, [])
 
   const toggleNotification = useCallback(() => {
@@ -67,8 +72,11 @@ const MinePage: React.FC = () => {
     {
       id: 'history',
       icon: '📋',
-      title: '接送历史',
-      desc: '查看历史接送记录'
+      title: '接站历史',
+      desc: handoverHistory.length > 0
+        ? `已留存 ${handoverHistory.length} 条交接记录`
+        : '查看历史交接记录',
+      onClick: handleGoToHistory
     },
     {
       id: 'contact',
