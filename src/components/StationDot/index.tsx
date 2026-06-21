@@ -3,18 +3,19 @@ import { View, Text } from '@tarojs/components'
 import classnames from 'classnames'
 import styles from './index.module.scss'
 import type { Station } from '@/types/bus'
+import type { StationStatus } from '@/utils'
 
 interface StationDotProps {
   station: Station
-  status: 'passed' | 'current' | 'future' | 'bound' | 'bound_passed' | 'bound_current'
+  status: StationStatus
   showHomeTag?: boolean
 }
 
 const StationDot: React.FC<StationDotProps> = ({ station, status, showHomeTag }) => {
-  const isPassed = status === 'passed' || status === 'bound_passed'
-  const isCurrent = status === 'current' || status === 'bound_current'
-  const isBound = status === 'bound' || status === 'bound_passed' || status === 'bound_current'
-  const isActive = isPassed || isCurrent || isBound
+  const isPassed = status === 'passed'
+  const isCurrent = status === 'current'
+  const isBoundArrived = status === 'bound_arrived'
+  const isActive = isPassed || isCurrent || isBoundArrived
 
   return (
     <View className={styles.stationDot}>
@@ -26,7 +27,7 @@ const StationDot: React.FC<StationDotProps> = ({ station, status, showHomeTag })
           styles.dot,
           isPassed && styles.passed,
           isCurrent && styles.current,
-          isBound && styles.bound
+          isBoundArrived && styles.boundArrived
         )}
       >
         <Text className={styles.dotIcon}>{station.icon}</Text>
@@ -35,7 +36,7 @@ const StationDot: React.FC<StationDotProps> = ({ station, status, showHomeTag })
         className={classnames(
           styles.stationName,
           isActive && styles.active,
-          isBound && styles.bound
+          isBoundArrived && styles.boundArrivedText
         )}
       >
         {station.name}

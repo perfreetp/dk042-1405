@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { View, Text, Image, Button, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
+import classnames from 'classnames'
 import styles from './index.module.scss'
 import { useBusStore } from '@/store/busStore'
 import BusRouteComponent from '@/components/BusRoute'
 import BusCard from '@/components/BusCard'
+import TripTimeline from '@/components/TripTimeline'
 import ReminderModal from '@/components/ReminderModal'
 import type { Reminder } from '@/types/bus'
-import { formatRelativeTime } from '@/utils'
+import { formatRelativeTime, formatTime } from '@/utils'
 
 const HomePage: React.FC = () => {
   const {
@@ -157,8 +159,34 @@ const HomePage: React.FC = () => {
               {childInfo.name} 已安全下车！
             </Text>
             <Text className={styles.bannerSubtitle}>
-              下车时间：{formatRelativeTime(handoverRecord.teacherConfirmTime)}
+              老师确认时间：{formatTime(handoverRecord.teacherConfirmTime)}
+              （{formatRelativeTime(handoverRecord.teacherConfirmTime)}）
             </Text>
+
+            <View className={styles.handoverInfoGrid}>
+              <View className={styles.handoverInfoItem}>
+                <Text className={styles.handoverInfoIcon}>🚌</Text>
+                <Text className={styles.handoverInfoLabel}>车牌</Text>
+                <Text className={styles.handoverInfoValue}>
+                  {handoverRecord.plateNumber || busInfo.plateNumber}
+                </Text>
+              </View>
+              <View className={styles.handoverInfoItem}>
+                <Text className={styles.handoverInfoIcon}>👩‍🏫</Text>
+                <Text className={styles.handoverInfoLabel}>随车老师</Text>
+                <Text className={styles.handoverInfoValue}>
+                  {handoverRecord.teacherName || busInfo.teacherName}
+                </Text>
+              </View>
+              <View className={styles.handoverInfoItem}>
+                <Text className={styles.handoverInfoIcon}>📍</Text>
+                <Text className={styles.handoverInfoLabel}>接站口</Text>
+                <Text className={styles.handoverInfoValue}>
+                  {handoverRecord.pickupLocation || `${childInfo.boundStationName}东门`}
+                </Text>
+              </View>
+            </View>
+
             <Button className={styles.confirmButton} onClick={handleGoToHandover}>
               <Text className={styles.icon}>😊</Text>
               确认已接到
@@ -175,6 +203,18 @@ const HomePage: React.FC = () => {
             <Text className={styles.bannerSubtitle}>
               已确认接到 {childInfo.name}，感谢您的配合~
             </Text>
+            {handoverRecord.parentConfirmTime && (
+              <Text className={styles.bannerSubtitle}>
+                家长确认时间：{formatTime(handoverRecord.parentConfirmTime)}
+              </Text>
+            )}
+            <Button
+              className={classnames(styles.confirmButton, styles.viewButton)}
+              onClick={handleGoToHandover}
+            >
+              <Text className={styles.icon}>📋</Text>
+              查看交接记录
+            </Button>
           </View>
         </View>
       )}
@@ -190,6 +230,16 @@ const HomePage: React.FC = () => {
         boundStationId={childInfo.boundStationId}
         handoverStatus={handoverRecord?.status || null}
       />
+
+      <View className={styles.timelineWrapper}>
+        <TripTimeline
+          route={route}
+          busLocation={busLocation}
+          boundStationId={childInfo.boundStationId}
+          reminders={reminders}
+          handoverStatus={handoverRecord?.status || null}
+        />
+      </View>
 
       <Text className={styles.sectionTitle}>
         <Text className={styles.icon}>🚌</Text>

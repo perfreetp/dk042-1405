@@ -57,6 +57,9 @@ export interface HandoverRecord {
   childName: string
   stationName: string
   busId: string
+  plateNumber?: string
+  teacherName?: string
+  pickupLocation?: string
   teacherConfirmTime: string
   parentConfirmTime?: string
   status: 'pending' | 'teacher_confirmed' | 'parent_confirmed'

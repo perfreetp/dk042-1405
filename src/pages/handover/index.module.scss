@@ -39,14 +39,16 @@
 
 .infoGrid {
   display: flex;
+  flex-wrap: wrap;
   gap: 16rpx;
 }
 
 .infoItem {
-  flex: 1;
+  flex: 0 0 calc(33.333% - 11rpx);
+  min-width: 0;
   background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
   border-radius: $radius-lg;
-  padding: 20rpx;
+  padding: 20rpx 12rpx;
   text-align: center;
 }
 
@@ -62,9 +64,97 @@
 }
 
 .infoItemValue {
-  font-size: $font-size-sm;
+  font-size: $font-size-xs;
   font-weight: $font-weight-semibold;
   color: $color-text-primary;
+  @include text-ellipsis;
+  max-width: 100%;
+}
+
+.processSection {
+  background: #FFFFFF;
+  border-radius: $radius-xl;
+  padding: 32rpx;
+  margin-top: 24rpx;
+  box-shadow: $shadow-card;
+}
+
+.processList {
+  position: relative;
+  padding-left: 8rpx;
+  margin-top: 16rpx;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 38rpx;
+    top: 36rpx;
+    bottom: 36rpx;
+    width: 4rpx;
+    background: $color-divider;
+    border-radius: $radius-round;
+  }
+}
+
+.processItem {
+  display: flex;
+  align-items: flex-start;
+  padding: 16rpx 0;
+  position: relative;
+
+  &.done .processDot {
+    background: $color-success;
+    box-shadow: 0 4rpx 12rpx rgba(76, 175, 80, 0.4);
+  }
+
+  &.pending .processDot {
+    background: $color-station-future;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+}
+
+.processDot {
+  width: 56rpx;
+  height: 56rpx;
+  border-radius: $radius-round;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+  margin-right: 20rpx;
+}
+
+.processDotIcon {
+  font-size: 28rpx;
+}
+
+.processContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.processTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+}
+
+.processDesc {
+  font-size: $font-size-xs;
+  color: $color-text-secondary;
+  line-height: 1.5;
+  margin-top: 4rpx;
+  display: block;
+}
+
+.processTime {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  margin-top: 6rpx;
+  display: block;
 }
 
 .actionSection {

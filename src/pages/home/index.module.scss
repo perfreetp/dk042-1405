@@ -150,6 +150,48 @@
   .icon {
     margin-right: 8rpx;
   }
+
+  &.viewButton {
+    background: linear-gradient(135deg, $color-secondary-blue 0%, #81D4FA 100%);
+  }
+}
+
+.handoverInfoGrid {
+  display: flex;
+  gap: 16rpx;
+  margin: 24rpx 0;
+}
+
+.handoverInfoItem {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: $radius-lg;
+  padding: 20rpx 12rpx;
+  text-align: center;
+}
+
+.handoverInfoIcon {
+  font-size: 36rpx;
+  display: block;
+  margin-bottom: 8rpx;
+}
+
+.handoverInfoLabel {
+  font-size: 20rpx;
+  color: $color-text-tertiary;
+  display: block;
+  margin-bottom: 4rpx;
+}
+
+.handoverInfoValue {
+  font-size: $font-size-xs;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  display: block;
+}
+
+.timelineWrapper {
+  margin-top: 24rpx;
 }
 
 .noBindContainer {

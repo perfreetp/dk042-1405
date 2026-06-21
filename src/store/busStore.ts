@@ -211,12 +211,16 @@ export const useBusStore = create<BusStore>((set, get) => ({
     if (remaining <= 0) {
       console.log('[BusStore] 已到或超过终点，设置交接记录')
       if (!get().handoverRecord) {
+        const bus = get().busInfo
         const record: HandoverRecord = {
           id: `ho_${generateId()}`,
           childId: childInfo.id,
           childName: childInfo.name,
           stationName: childInfo.boundStationName,
           busId: route.id,
+          plateNumber: bus?.plateNumber,
+          teacherName: bus?.teacherName,
+          pickupLocation: `${childInfo.boundStationName}东门`,
           teacherConfirmTime: new Date().toISOString(),
           status: 'teacher_confirmed'
         }
@@ -228,9 +232,14 @@ export const useBusStore = create<BusStore>((set, get) => ({
             id: `arrival_${generateId()}`,
             type: 'formal',
             title: `${childInfo.name}已安全下车`,
-            content: `${childInfo.name}已在${childInfo.boundStationName}站安全下车，由李老师确认交接`,
+            content: `${childInfo.name}已在${childInfo.boundStationName}站安全下车，由${bus?.teacherName || '李老师'}确认交接`,
             stationName: childInfo.boundStationName,
             remainingStations: 0,
+            busInfo: {
+              plateNumber: bus?.plateNumber || '粤A·B1234',
+              teacherName: bus?.teacherName || '李老师',
+              pickupLocation: `${childInfo.boundStationName}东门`
+            },
             createTime: new Date().toISOString(),
             isRead: false
           }
@@ -258,12 +267,16 @@ export const useBusStore = create<BusStore>((set, get) => ({
 
       if (remaining <= 0) {
         if (!get().handoverRecord) {
+          const bus = get().busInfo
           const record: HandoverRecord = {
             id: `ho_${generateId()}`,
             childId: childInfo.id,
             childName: childInfo.name,
             stationName: childInfo.boundStationName,
             busId: route.id,
+            plateNumber: bus?.plateNumber,
+            teacherName: bus?.teacherName,
+            pickupLocation: `${childInfo.boundStationName}东门`,
             teacherConfirmTime: new Date().toISOString(),
             status: 'teacher_confirmed'
           }
@@ -275,9 +288,14 @@ export const useBusStore = create<BusStore>((set, get) => ({
               id: `arrival_${generateId()}`,
               type: 'formal',
               title: `${childInfo.name}已安全下车`,
-              content: `${childInfo.name}已在${childInfo.boundStationName}站安全下车，由李老师确认交接`,
+              content: `${childInfo.name}已在${childInfo.boundStationName}站安全下车，由${bus?.teacherName || '李老师'}确认交接`,
               stationName: childInfo.boundStationName,
               remainingStations: 0,
+              busInfo: {
+                plateNumber: bus?.plateNumber || '粤A·B1234',
+                teacherName: bus?.teacherName || '李老师',
+                pickupLocation: `${childInfo.boundStationName}东门`
+              },
               createTime: new Date().toISOString(),
               isRead: false
             }

@@ -77,8 +77,8 @@ const HandoverPage: React.FC = () => {
 
         <View className={styles.teacherConfirmInfo}>
           <Text className={styles.infoTitle}>
-            <Text className={styles.icon}>👩‍🏫</Text>
-            随车老师已确认
+            <Text className={styles.icon}>�</Text>
+            交接信息
           </Text>
           <View className={styles.infoGrid}>
             <View className={styles.infoItem}>
@@ -87,14 +87,82 @@ const HandoverPage: React.FC = () => {
               <Text className={styles.infoItemValue}>{handoverRecord.stationName}</Text>
             </View>
             <View className={styles.infoItem}>
+              <Text className={styles.infoItemIcon}>🚌</Text>
+              <Text className={styles.infoItemLabel}>车牌号码</Text>
+              <Text className={styles.infoItemValue}>
+                {handoverRecord.plateNumber || busInfo.plateNumber}
+              </Text>
+            </View>
+            <View className={styles.infoItem}>
+              <Text className={styles.infoItemIcon}>👩‍🏫</Text>
+              <Text className={styles.infoItemLabel}>随车老师</Text>
+              <Text className={styles.infoItemValue}>
+                {handoverRecord.teacherName || busInfo.teacherName}
+              </Text>
+            </View>
+            <View className={styles.infoItem}>
+              <Text className={styles.infoItemIcon}>🚪</Text>
+              <Text className={styles.infoItemLabel}>接站口</Text>
+              <Text className={styles.infoItemValue}>
+                {handoverRecord.pickupLocation || `${childInfo.boundStationName}东门`}
+              </Text>
+            </View>
+            <View className={styles.infoItem}>
               <Text className={styles.infoItemIcon}>🕐</Text>
               <Text className={styles.infoItemLabel}>下车时间</Text>
               <Text className={styles.infoItemValue}>{formatTime(handoverRecord.teacherConfirmTime)}</Text>
             </View>
             <View className={styles.infoItem}>
-              <Text className={styles.infoItemIcon}>🚌</Text>
-              <Text className={styles.infoItemLabel}>车辆牌照</Text>
-              <Text className={styles.infoItemValue}>{busInfo.plateNumber}</Text>
+              <Text className={styles.infoItemIcon}>�</Text>
+              <Text className={styles.infoItemLabel}>老师电话</Text>
+              <Text className={styles.infoItemValue}>{busInfo.teacherPhone}</Text>
+            </View>
+          </View>
+        </View>
+
+        <View className={styles.processSection}>
+          <Text className={styles.infoTitle}>
+            <Text className={styles.icon}>🔄</Text>
+            交接流程
+          </Text>
+          <View className={styles.processList}>
+            <View className={classnames(styles.processItem, styles.done)}>
+              <View className={styles.processDot}>
+                <Text className={styles.processDotIcon}>👩‍🏫</Text>
+              </View>
+              <View className={styles.processContent}>
+                <Text className={styles.processTitle}>照管员确认到站</Text>
+                <Text className={styles.processDesc}>
+                  {handoverRecord.teacherName || busInfo.teacherName} 已确认 {childInfo.name} 在 {handoverRecord.stationName} 站下车
+                </Text>
+                <Text className={styles.processTime}>
+                  {formatTime(handoverRecord.teacherConfirmTime)}
+                </Text>
+              </View>
+            </View>
+
+            <View className={classnames(
+              styles.processItem,
+              isConfirmed ? styles.done : styles.pending
+            )}>
+              <View className={styles.processDot}>
+                <Text className={styles.processDotIcon}>{isConfirmed ? '✅' : '⏳'}</Text>
+              </View>
+              <View className={styles.processContent}>
+                <Text className={styles.processTitle}>
+                  {isConfirmed ? '家长确认接到' : '等待家长确认'}
+                </Text>
+                <Text className={styles.processDesc}>
+                  {isConfirmed
+                    ? `您已确认接到 ${childInfo.name}，交接完成`
+                    : `请在接到 ${childInfo.name} 后点击下方按钮确认`}
+                </Text>
+                {handoverRecord.parentConfirmTime && (
+                  <Text className={styles.processTime}>
+                    {formatTime(handoverRecord.parentConfirmTime)}
+                  </Text>
+                )}
+              </View>
             </View>
           </View>
         </View>

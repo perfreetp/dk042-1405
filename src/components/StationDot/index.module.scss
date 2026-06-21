@@ -36,15 +36,10 @@
     animation: pulse 1.5s ease-in-out infinite;
   }
 
-  &.bound {
-    background: $color-secondary-pink;
-    border-color: #E91E63;
-    box-shadow: 0 4rpx 16rpx rgba(244, 143, 177, 0.5);
-  }
-
-  &.bound.passed {
+  &.boundArrived {
     background: $color-success;
     border-color: $color-success;
+    box-shadow: 0 4rpx 16rpx rgba(76, 175, 80, 0.5);
   }
 }
 
@@ -66,8 +61,8 @@
     font-weight: $font-weight-medium;
   }
 
-  &.bound {
-    color: #E91E63;
+  &.boundArrivedText {
+    color: $color-success;
     font-weight: $font-weight-semibold;
   }
 }

@@ -19,19 +19,43 @@ export const formatRelativeTime = (isoString: string): string => {
   return `${Math.floor(diffMinutes / 1440)}天前`
 }
 
+export type StationStatus = 'passed' | 'current' | 'future' | 'bound_arrived'
+
 export const getStationStatus = (
   stationOrder: number,
   currentStationIndex: number,
   boundStationIndex: number
-): 'passed' | 'current' | 'future' | 'bound' | 'bound_passed' | 'bound_current' => {
-  if (stationOrder === boundStationIndex) {
-    if (stationOrder < currentStationIndex) return 'bound_passed'
-    if (stationOrder === currentStationIndex) return 'bound_current'
-    return 'bound'
-  }
+): StationStatus => {
+  const isBound = stationOrder === boundStationIndex
+  const isReached = stationOrder <= currentStationIndex
+
+  if (isBound && isReached) return 'bound_arrived'
   if (stationOrder < currentStationIndex) return 'passed'
   if (stationOrder === currentStationIndex) return 'current'
   return 'future'
+}
+
+export const getStationLabel = (
+  status: StationStatus,
+  station: { name: string },
+  currentStationIndex: number,
+  boundStationIndex: number,
+  estimatedMinutes: number
+): string => {
+  switch (status) {
+    case 'passed':
+      return '已通过'
+    case 'current':
+      return '校车当前所在'
+    case 'bound_arrived':
+      return '已到达·下车站'
+    case 'future':
+      if (station.order === boundStationIndex) {
+        return `下车站·还有 ${Math.max(0, boundStationIndex - currentStationIndex)} 站`
+      }
+      return '待到达'
+  }
+  return ''
 }
 
 export const generateId = (): string => {
