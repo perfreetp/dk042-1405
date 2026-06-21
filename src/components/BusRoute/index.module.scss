@@ -44,6 +44,10 @@
   padding: 8rpx 20rpx;
   border-radius: $radius-round;
   font-weight: $font-weight-medium;
+
+  &.arrivedBadge {
+    background: linear-gradient(135deg, $color-success 0%, #66BB6A 100%);
+  }
 }
 
 .stationsContainer {
@@ -126,6 +130,15 @@
   &.timeCard {
     background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
     border-color: rgba(79, 195, 247, 0.3);
+  }
+
+  &.arrivedCard {
+    background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+    border-color: rgba(76, 175, 80, 0.3);
+
+    .infoValue {
+      color: $color-success;
+    }
   }
 }
 

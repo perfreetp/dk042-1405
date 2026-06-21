@@ -23,8 +23,12 @@ export const getStationStatus = (
   stationOrder: number,
   currentStationIndex: number,
   boundStationIndex: number
-): 'passed' | 'current' | 'future' | 'bound' => {
-  if (stationOrder === boundStationIndex) return 'bound'
+): 'passed' | 'current' | 'future' | 'bound' | 'bound_passed' | 'bound_current' => {
+  if (stationOrder === boundStationIndex) {
+    if (stationOrder < currentStationIndex) return 'bound_passed'
+    if (stationOrder === currentStationIndex) return 'bound_current'
+    return 'bound'
+  }
   if (stationOrder < currentStationIndex) return 'passed'
   if (stationOrder === currentStationIndex) return 'current'
   return 'future'

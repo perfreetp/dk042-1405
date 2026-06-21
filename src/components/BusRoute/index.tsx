@@ -10,9 +10,10 @@ interface BusRouteProps {
   route: BusRoute
   busLocation: BusLocation
   boundStationId: string
+  handoverStatus?: 'pending' | 'teacher_confirmed' | 'parent_confirmed' | null
 }
 
-const BusRouteComponent: React.FC<BusRouteProps> = ({ route, busLocation, boundStationId }) => {
+const BusRouteComponent: React.FC<BusRouteProps> = ({ route, busLocation, boundStationId, handoverStatus }) => {
   const boundStationIndex = useMemo(() => {
     return route.stations.findIndex((s) => s.id === boundStationId)
   }, [route.stations, boundStationId])
@@ -37,6 +38,16 @@ const BusRouteComponent: React.FC<BusRouteProps> = ({ route, busLocation, boundS
     return `${position + 5}%`
   }, [busLocation.currentStationIndex, boundStationIndex, stationsToShow.length])
 
+  const isArrived = handoverStatus === 'teacher_confirmed' || handoverStatus === 'parent_confirmed'
+
+  const badgeText = useMemo(() => {
+    if (handoverStatus === 'parent_confirmed') return '🏠 已到家'
+    if (handoverStatus === 'teacher_confirmed') return '✅ 已到达'
+    return '🚌 运行中'
+  }, [handoverStatus])
+
+  const showBus = busLocation.currentStationIndex < boundStationIndex
+
   return (
     <View className={styles.busRouteContainer}>
       <View className={styles.cloudDecoration + ' ' + styles.cloud1}>☁️</View>
@@ -47,7 +58,9 @@ const BusRouteComponent: React.FC<BusRouteProps> = ({ route, busLocation, boundS
           <Text className={styles.schoolName}>🏫 {route.schoolName}</Text>
           {route.name}
         </Text>
-        <View className={styles.routeBadge}>🚌 运行中</View>
+        <View className={classnames(styles.routeBadge, isArrived && styles.arrivedBadge)}>
+          {badgeText}
+        </View>
       </View>
 
       <View className={styles.stationsContainer}>
@@ -57,10 +70,12 @@ const BusRouteComponent: React.FC<BusRouteProps> = ({ route, busLocation, boundS
           style={{ width: `${progressPercent}%` }}
         ></View>
 
-        <View className={styles.busWrapper} style={{ left: busPosition }}>
-          <Text className={styles.busSmoke}>💨</Text>
-          <Text className={styles.busIcon}>🚌</Text>
-        </View>
+        {showBus && (
+          <View className={styles.busWrapper} style={{ left: busPosition }}>
+            <Text className={styles.busSmoke}>💨</Text>
+            <Text className={styles.busIcon}>🚌</Text>
+          </View>
+        )}
 
         <View className={styles.stationsRow}>
           {stationsToShow.map((station: Station) => (
@@ -78,22 +93,33 @@ const BusRouteComponent: React.FC<BusRouteProps> = ({ route, busLocation, boundS
         </View>
       </View>
 
-      <View className={styles.infoCards}>
-        <View className={styles.infoCard}>
-          <Text className={styles.infoValue}>
-            {busLocation.remainingStations}
-            <Text className={styles.infoUnit}>站</Text>
-          </Text>
-          <Text className={styles.infoLabel}>还剩</Text>
+      {!isArrived ? (
+        <View className={styles.infoCards}>
+          <View className={styles.infoCard}>
+            <Text className={styles.infoValue}>
+              {busLocation.remainingStations}
+              <Text className={styles.infoUnit}>站</Text>
+            </Text>
+            <Text className={styles.infoLabel}>还剩</Text>
+          </View>
+          <View className={classnames(styles.infoCard, styles.timeCard)}>
+            <Text className={styles.infoValue}>
+              {busLocation.estimatedMinutes}
+              <Text className={styles.infoUnit}>分钟</Text>
+            </Text>
+            <Text className={styles.infoLabel}>大约到达</Text>
+          </View>
         </View>
-        <View className={classnames(styles.infoCard, styles.timeCard)}>
-          <Text className={styles.infoValue}>
-            {busLocation.estimatedMinutes}
-            <Text className={styles.infoUnit}>分钟</Text>
-          </Text>
-          <Text className={styles.infoLabel}>大约到达</Text>
+      ) : (
+        <View className={styles.infoCards}>
+          <View className={classnames(styles.infoCard, styles.arrivedCard)}>
+            <Text className={styles.infoValue} style={{ fontSize: '32rpx' }}>
+              ✅ 已到达
+            </Text>
+            <Text className={styles.infoLabel}>孩子已安全下车</Text>
+          </View>
         </View>
-      </View>
+      )}
     </View>
   )
 }

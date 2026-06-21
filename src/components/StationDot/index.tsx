@@ -6,12 +6,15 @@ import type { Station } from '@/types/bus'
 
 interface StationDotProps {
   station: Station
-  status: 'passed' | 'current' | 'future' | 'bound'
+  status: 'passed' | 'current' | 'future' | 'bound' | 'bound_passed' | 'bound_current'
   showHomeTag?: boolean
 }
 
 const StationDot: React.FC<StationDotProps> = ({ station, status, showHomeTag }) => {
-  const isActive = status === 'current' || status === 'passed' || status === 'bound'
+  const isPassed = status === 'passed' || status === 'bound_passed'
+  const isCurrent = status === 'current' || status === 'bound_current'
+  const isBound = status === 'bound' || status === 'bound_passed' || status === 'bound_current'
+  const isActive = isPassed || isCurrent || isBound
 
   return (
     <View className={styles.stationDot}>
@@ -21,9 +24,9 @@ const StationDot: React.FC<StationDotProps> = ({ station, status, showHomeTag })
       <View
         className={classnames(
           styles.dot,
-          status === 'passed' && styles.passed,
-          status === 'current' && styles.current,
-          status === 'bound' && styles.bound
+          isPassed && styles.passed,
+          isCurrent && styles.current,
+          isBound && styles.bound
         )}
       >
         <Text className={styles.dotIcon}>{station.icon}</Text>
@@ -32,7 +35,7 @@ const StationDot: React.FC<StationDotProps> = ({ station, status, showHomeTag })
         className={classnames(
           styles.stationName,
           isActive && styles.active,
-          status === 'bound' && styles.bound
+          isBound && styles.bound
         )}
       >
         {station.name}

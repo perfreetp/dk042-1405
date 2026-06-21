@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { View, Text, Image, Button, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import styles from './index.module.scss'
 import { useBusStore } from '@/store/busStore'
-import { mockChildInfo, mockRoute, mockBusInfo } from '@/data/mockData'
 import BusRouteComponent from '@/components/BusRoute'
 import BusCard from '@/components/BusCard'
 import ReminderModal from '@/components/ReminderModal'
@@ -19,20 +18,13 @@ const HomePage: React.FC = () => {
     busLocation,
     handoverRecord,
     reminders,
-    setBound,
     simulateBusProgress
   } = useBusStore()
 
   const [showReminder, setShowReminder] = useState(false)
   const [currentReminder, setCurrentReminder] = useState<Reminder | null>(null)
   const [refreshing, setRefreshing] = useState(false)
-
-  useEffect(() => {
-    if (!isBound) {
-      console.log('[HomePage] 初始化绑定线路')
-      setBound(mockChildInfo, mockRoute, mockBusInfo)
-    }
-  }, [isBound, setBound])
+  const shownReminderIds = useRef<Set<string>>(new Set())
 
   useEffect(() => {
     if (isBound && busLocation) {
@@ -43,13 +35,24 @@ const HomePage: React.FC = () => {
   }, [isBound, busLocation, simulateBusProgress])
 
   useEffect(() => {
-    const unreadReminder = reminders.find((r) => !r.isRead)
+    if (handoverRecord?.status === 'parent_confirmed') {
+      console.log('[HomePage] 交接已完成，跳过未读提醒弹窗')
+      return
+    }
+
+    const unreadReminder = reminders.find(
+      (r) => !r.isRead && !shownReminderIds.current.has(r.id)
+    )
     if (unreadReminder && !showReminder) {
-      console.log('[HomePage] 显示新提醒', { type: unreadReminder.type })
+      console.log('[HomePage] 显示新提醒', {
+        type: unreadReminder.type,
+        id: unreadReminder.id
+      })
+      shownReminderIds.current.add(unreadReminder.id)
       setCurrentReminder(unreadReminder)
       setShowReminder(true)
     }
-  }, [reminders, showReminder])
+  }, [reminders, showReminder, handoverRecord])
 
   const handleCloseReminder = useCallback(() => {
     if (currentReminder) {
@@ -185,6 +188,7 @@ const HomePage: React.FC = () => {
         route={route}
         busLocation={busLocation}
         boundStationId={childInfo.boundStationId}
+        handoverStatus={handoverRecord?.status || null}
       />
 
       <Text className={styles.sectionTitle}>
