@@ -3,18 +3,29 @@ import { View, Text, ScrollView } from '@tarojs/components'
 import classnames from 'classnames'
 import styles from './index.module.scss'
 import { useBusStore } from '@/store/busStore'
-import { formatDate, formatDateChinese, formatTime } from '@/utils'
+import { formatDate, formatDateChinese, formatTime, normalizeHandoverRecord } from '@/utils'
 import type { HandoverRecord } from '@/types/bus'
 
 const HistoryPage: React.FC = () => {
   const { handoverHistory, handoverRecord } = useBusStore()
 
   const allRecords = useMemo(() => {
+    const historyIds = new Set(handoverHistory.map(h => h.id))
     const list = [...handoverHistory]
-    if (handoverRecord && !list.some(h => h.id === handoverRecord.id)) {
+
+    if (handoverRecord && !historyIds.has(handoverRecord.id)) {
       list.unshift(handoverRecord)
     }
-    return list.sort((a, b) =>
+
+    const uniqueMap = new Map<string, HandoverRecord>()
+    list.forEach((r) => {
+      const normalized = normalizeHandoverRecord(r)
+      if (!uniqueMap.has(normalized.id)) {
+        uniqueMap.set(normalized.id, normalized)
+      }
+    })
+
+    return Array.from(uniqueMap.values()).sort((a, b) =>
       new Date(b.teacherConfirmTime).getTime() - new Date(a.teacherConfirmTime).getTime()
     )
   }, [handoverHistory, handoverRecord])

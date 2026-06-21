@@ -2,6 +2,7 @@ import React from 'react'
 import { View, Text, Button } from '@tarojs/components'
 import classnames from 'classnames'
 import styles from './index.module.scss'
+import { normalizeReminder } from '@/utils'
 import type { Reminder, ReminderType } from '@/types/bus'
 
 interface ReminderModalProps {
@@ -22,6 +23,8 @@ const ReminderModal: React.FC<ReminderModalProps> = ({ visible, reminder, onClos
   const meta = TYPE_META[reminder.type]
   const isLight = meta.isLight
   const isArrival = meta.isArrival
+  const normalized = normalizeReminder(reminder)
+  const busInfo = normalized.busInfo!
 
   return (
     <View className={styles.modalOverlay} onClick={onClose}>
@@ -68,15 +71,15 @@ const ReminderModal: React.FC<ReminderModalProps> = ({ visible, reminder, onClos
             <Text className={styles.busInfoTitle}>🚌 接车信息</Text>
             <View className={styles.infoRow}>
               <Text className={styles.infoLabel}>车牌号码</Text>
-              <Text className={styles.infoValue}>{reminder.busInfo.plateNumber}</Text>
+              <Text className={styles.infoValue}>{busInfo.plateNumber}</Text>
             </View>
             <View className={styles.infoRow}>
               <Text className={styles.infoLabel}>随车老师</Text>
-              <Text className={styles.infoValue}>{reminder.busInfo.teacherName}</Text>
+              <Text className={styles.infoValue}>{busInfo.teacherName}</Text>
             </View>
             <View className={styles.infoRow}>
               <Text className={styles.infoLabel}>接站口</Text>
-              <Text className={styles.infoValue}>{reminder.busInfo.pickupLocation}</Text>
+              <Text className={styles.infoValue}>{busInfo.pickupLocation}</Text>
             </View>
           </View>
         </View>

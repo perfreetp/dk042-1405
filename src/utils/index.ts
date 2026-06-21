@@ -1,7 +1,39 @@
 import dayjs from 'dayjs'
-import type { Station, BusLocation, BusRoute } from '@/types/bus'
+import type { Station, BusLocation, BusRoute, Reminder, HandoverRecord } from '@/types/bus'
 
 export const MINUTES_PER_STATION = 4
+
+const DEFAULT_BUS_INFO = {
+  plateNumber: '粤A·B1234',
+  teacherName: '李老师',
+  pickupLocation: '小区东门'
+}
+
+export const normalizeReminder = (reminder: Reminder): Reminder => {
+  if (reminder.busInfo && 
+      reminder.busInfo.plateNumber && 
+      reminder.busInfo.teacherName && 
+      reminder.busInfo.pickupLocation) {
+    return reminder
+  }
+  return {
+    ...reminder,
+    busInfo: {
+      plateNumber: reminder.busInfo?.plateNumber || DEFAULT_BUS_INFO.plateNumber,
+      teacherName: reminder.busInfo?.teacherName || DEFAULT_BUS_INFO.teacherName,
+      pickupLocation: reminder.busInfo?.pickupLocation || `${reminder.stationName}东门`
+    }
+  }
+}
+
+export const normalizeHandoverRecord = (record: HandoverRecord): HandoverRecord => {
+  return {
+    ...record,
+    plateNumber: record.plateNumber || DEFAULT_BUS_INFO.plateNumber,
+    teacherName: record.teacherName || DEFAULT_BUS_INFO.teacherName,
+    pickupLocation: record.pickupLocation || `${record.stationName}东门`
+  }
+}
 
 export const formatTime = (isoString: string): string => {
   return dayjs(isoString).format('HH:mm')

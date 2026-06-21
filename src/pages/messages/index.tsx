@@ -3,7 +3,7 @@ import { View, Text, Button, ScrollView } from '@tarojs/components'
 import classnames from 'classnames'
 import styles from './index.module.scss'
 import { useBusStore } from '@/store/busStore'
-import { formatRelativeTime, formatDateTime } from '@/utils'
+import { formatRelativeTime, formatDateTime, normalizeReminder } from '@/utils'
 import type { Reminder, ReminderType } from '@/types/bus'
 
 type FilterType = 'all' | ReminderType
@@ -188,6 +188,8 @@ const MessageDetailModal: React.FC<{ reminder: Reminder; onClose: () => void }> 
   onClose
 }) => {
   const meta = TYPE_META[reminder.type]
+  const normalized = normalizeReminder(reminder)
+  const busInfo = normalized.busInfo!
 
   return (
     <View className={styles.detailOverlay} onClick={onClose}>
@@ -227,15 +229,15 @@ const MessageDetailModal: React.FC<{ reminder: Reminder; onClose: () => void }> 
           <Text className={styles.detailSectionTitle}>🚌 接车信息</Text>
           <View className={styles.detailInfoRow}>
             <Text className={styles.detailInfoLabel}>车牌号码</Text>
-            <Text className={styles.detailInfoValue}>{reminder.busInfo.plateNumber}</Text>
+            <Text className={styles.detailInfoValue}>{busInfo.plateNumber}</Text>
           </View>
           <View className={styles.detailInfoRow}>
             <Text className={styles.detailInfoLabel}>随车老师</Text>
-            <Text className={styles.detailInfoValue}>{reminder.busInfo.teacherName}</Text>
+            <Text className={styles.detailInfoValue}>{busInfo.teacherName}</Text>
           </View>
           <View className={styles.detailInfoRow}>
             <Text className={styles.detailInfoLabel}>接站口</Text>
-            <Text className={styles.detailInfoValue}>{reminder.busInfo.pickupLocation}</Text>
+            <Text className={styles.detailInfoValue}>{busInfo.pickupLocation}</Text>
           </View>
         </View>
 

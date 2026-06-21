@@ -1,22 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { View, Text, Button, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import classnames from 'classnames'
 import styles from './index.module.scss'
 import { useBusStore } from '@/store/busStore'
 import SafetyBadge from '@/components/SafetyBadge'
-import { formatTime } from '@/utils'
+import { formatTime, normalizeHandoverRecord } from '@/utils'
 
 const HandoverPage: React.FC = () => {
   const { handoverRecord, childInfo, busInfo, confirmParentReceive } = useBusStore()
   const [showConfetti, setShowConfetti] = useState(false)
   const [isConfirmed, setIsConfirmed] = useState(false)
 
+  const normalizedRecord = useMemo(() => {
+    return handoverRecord ? normalizeHandoverRecord(handoverRecord) : null
+  }, [handoverRecord])
+
   useEffect(() => {
-    if (handoverRecord?.status === 'parent_confirmed') {
+    if (normalizedRecord?.status === 'parent_confirmed') {
       setIsConfirmed(true)
     }
-  }, [handoverRecord])
+  }, [normalizedRecord])
 
   const handleConfirmReceive = useCallback(() => {
     console.log('[HandoverPage] 家长确认接到孩子')
@@ -45,7 +49,7 @@ const HandoverPage: React.FC = () => {
     Taro.navigateTo({ url: '/pages/history/index' })
   }, [])
 
-  if (!handoverRecord || !childInfo || !busInfo) {
+  if (!normalizedRecord || !childInfo || !busInfo) {
     return (
       <ScrollView className={styles.handoverPage} scrollY>
         <View style={{ textAlign: 'center', padding: '80rpx 40rpx' }}>
@@ -58,6 +62,8 @@ const HandoverPage: React.FC = () => {
       </ScrollView>
     )
   }
+
+  const record = normalizedRecord
 
   return (
     <ScrollView className={styles.handoverPage} scrollY>
@@ -75,50 +81,44 @@ const HandoverPage: React.FC = () => {
         <View className={styles.badgeSection}>
           <SafetyBadge
             childName={childInfo.name}
-            stationName={handoverRecord.stationName}
-            confirmTime={handoverRecord.teacherConfirmTime}
+            stationName={record.stationName}
+            confirmTime={record.teacherConfirmTime}
           />
         </View>
 
         <View className={styles.teacherConfirmInfo}>
           <Text className={styles.infoTitle}>
-            <Text className={styles.icon}>�</Text>
+            <Text className={styles.icon}>📋</Text>
             交接信息
           </Text>
           <View className={styles.infoGrid}>
             <View className={styles.infoItem}>
               <Text className={styles.infoItemIcon}>📍</Text>
               <Text className={styles.infoItemLabel}>下车站点</Text>
-              <Text className={styles.infoItemValue}>{handoverRecord.stationName}</Text>
+              <Text className={styles.infoItemValue}>{record.stationName}</Text>
             </View>
             <View className={styles.infoItem}>
               <Text className={styles.infoItemIcon}>🚌</Text>
               <Text className={styles.infoItemLabel}>车牌号码</Text>
-              <Text className={styles.infoItemValue}>
-                {handoverRecord.plateNumber || busInfo.plateNumber}
-              </Text>
+              <Text className={styles.infoItemValue}>{record.plateNumber}</Text>
             </View>
             <View className={styles.infoItem}>
               <Text className={styles.infoItemIcon}>👩‍🏫</Text>
               <Text className={styles.infoItemLabel}>随车老师</Text>
-              <Text className={styles.infoItemValue}>
-                {handoverRecord.teacherName || busInfo.teacherName}
-              </Text>
+              <Text className={styles.infoItemValue}>{record.teacherName}</Text>
             </View>
             <View className={styles.infoItem}>
               <Text className={styles.infoItemIcon}>🚪</Text>
               <Text className={styles.infoItemLabel}>接站口</Text>
-              <Text className={styles.infoItemValue}>
-                {handoverRecord.pickupLocation || `${childInfo.boundStationName}东门`}
-              </Text>
+              <Text className={styles.infoItemValue}>{record.pickupLocation}</Text>
             </View>
             <View className={styles.infoItem}>
               <Text className={styles.infoItemIcon}>🕐</Text>
               <Text className={styles.infoItemLabel}>下车时间</Text>
-              <Text className={styles.infoItemValue}>{formatTime(handoverRecord.teacherConfirmTime)}</Text>
+              <Text className={styles.infoItemValue}>{formatTime(record.teacherConfirmTime)}</Text>
             </View>
             <View className={styles.infoItem}>
-              <Text className={styles.infoItemIcon}>�</Text>
+              <Text className={styles.infoItemIcon}>📞</Text>
               <Text className={styles.infoItemLabel}>老师电话</Text>
               <Text className={styles.infoItemValue}>{busInfo.teacherPhone}</Text>
             </View>
@@ -138,10 +138,10 @@ const HandoverPage: React.FC = () => {
               <View className={styles.processContent}>
                 <Text className={styles.processTitle}>照管员确认到站</Text>
                 <Text className={styles.processDesc}>
-                  {handoverRecord.teacherName || busInfo.teacherName} 已确认 {childInfo.name} 在 {handoverRecord.stationName} 站下车
+                  {record.teacherName} 已确认 {childInfo.name} 在 {record.stationName} 站下车
                 </Text>
                 <Text className={styles.processTime}>
-                  {formatTime(handoverRecord.teacherConfirmTime)}
+                  {formatTime(record.teacherConfirmTime)}
                 </Text>
               </View>
             </View>
@@ -162,9 +162,9 @@ const HandoverPage: React.FC = () => {
                     ? `您已确认接到 ${childInfo.name}，交接完成`
                     : `请在接到 ${childInfo.name} 后点击下方按钮确认`}
                 </Text>
-                {handoverRecord.parentConfirmTime && (
+                {record.parentConfirmTime && (
                   <Text className={styles.processTime}>
-                    {formatTime(handoverRecord.parentConfirmTime)}
+                    {formatTime(record.parentConfirmTime)}
                   </Text>
                 )}
               </View>
@@ -172,7 +172,7 @@ const HandoverPage: React.FC = () => {
           </View>
         </View>
 
-        {!isConfirmed && handoverRecord.status === 'teacher_confirmed' ? (
+        {!isConfirmed && record.status === 'teacher_confirmed' ? (
           <View className={styles.actionSection}>
             <Text className={styles.actionTitle}>确认接到孩子</Text>
             <Text className={styles.actionDesc}>

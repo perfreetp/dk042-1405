@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { View, Text, Image, ScrollView } from '@tarojs/components'
 import Taro from '@tarojs/taro'
 import classnames from 'classnames'
@@ -17,11 +17,20 @@ interface MenuItem {
 }
 
 const MinePage: React.FC = () => {
-  const { childInfo, route, isBound, reminders, handoverHistory } = useBusStore()
+  const { childInfo, route, isBound, reminders, handoverHistory, handoverRecord } = useBusStore()
   const [notificationsOn, setNotificationsOn] = useState(true)
   const [soundOn, setSoundOn] = useState(true)
 
   const unreadCount = reminders.filter((r) => !r.isRead).length
+
+  const historyCount = useMemo(() => {
+    const historyIds = new Set(handoverHistory.map(h => h.id))
+    let count = handoverHistory.length
+    if (handoverRecord && !historyIds.has(handoverRecord.id)) {
+      count++
+    }
+    return count
+  }, [handoverHistory, handoverRecord])
 
   const handleGoToBinding = useCallback(() => {
     console.log('[MinePage] 跳转到线路绑定')
@@ -73,8 +82,8 @@ const MinePage: React.FC = () => {
       id: 'history',
       icon: '📋',
       title: '接站历史',
-      desc: handoverHistory.length > 0
-        ? `已留存 ${handoverHistory.length} 条交接记录`
+      desc: historyCount > 0
+        ? `已留存 ${historyCount} 条交接记录`
         : '查看历史交接记录',
       onClick: handleGoToHistory
     },

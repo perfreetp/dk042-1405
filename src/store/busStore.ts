@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import Taro from '@tarojs/taro'
 import type { AppState, BusLocation, Reminder, HandoverRecord, ChildInfo, BusRoute, BusInfo } from '@/types/bus'
-import { generateId, MINUTES_PER_STATION } from '@/utils'
+import { generateId, MINUTES_PER_STATION, normalizeReminder, normalizeHandoverRecord } from '@/utils'
 
 const STORAGE_KEY = 'school_bus_app_state_v2'
 
@@ -33,13 +33,56 @@ interface BusStore extends AppState {
   resetAll: () => void
 }
 
+const buildTriggerKey = (type: string, remaining: number): string => `${type}_${remaining}`
+
+const rebuildTriggeredReminders = (reminders: Reminder[]): string[] => {
+  const keys = new Set<string>()
+  reminders.forEach((r) => {
+    keys.add(buildTriggerKey(r.type, r.remainingStations))
+  })
+  return Array.from(keys)
+}
+
 const loadFromStorage = (): Partial<PersistState> => {
   try {
     const data = Taro.getStorageSync(STORAGE_KEY)
     if (data) {
       const parsed = JSON.parse(data)
-      console.log('[BusStore] 从本地存储恢复数据', { isBound: parsed.isBound })
-      return parsed
+      console.log('[BusStore] 从本地存储恢复数据', { isBound: parsed.isBound, remindersCount: parsed.reminders?.length })
+
+      const normalizedReminders = (parsed.reminders || []).map(normalizeReminder)
+      const normalizedHistory = (parsed.handoverHistory || []).map(normalizeHandoverRecord)
+      const normalizedRecord = parsed.handoverRecord ? normalizeHandoverRecord(parsed.handoverRecord) : null
+
+      const triggered = parsed.triggeredReminders && parsed.triggeredReminders.length > 0
+        ? parsed.triggeredReminders
+        : rebuildTriggeredReminders(normalizedReminders)
+
+      const seenIds = new Set<string>()
+      const dedupedReminders: Reminder[] = []
+      for (const r of normalizedReminders) {
+        if (!seenIds.has(r.id)) {
+          seenIds.add(r.id)
+          dedupedReminders.push(r)
+        }
+      }
+
+      const seenHistoryIds = new Set<string>()
+      const dedupedHistory: HandoverRecord[] = []
+      for (const h of normalizedHistory) {
+        if (!seenHistoryIds.has(h.id)) {
+          seenHistoryIds.add(h.id)
+          dedupedHistory.push(h)
+        }
+      }
+
+      return {
+        ...parsed,
+        reminders: dedupedReminders,
+        handoverHistory: dedupedHistory,
+        handoverRecord: normalizedRecord,
+        triggeredReminders: triggered
+      }
     }
   } catch (e) {
     console.error('[BusStore] 读取本地存储失败', e)
@@ -118,21 +161,33 @@ export const useBusStore = create<BusStore>((set, get) => ({
   },
 
   addReminder: (reminder) => {
-    const triggerKey = `${reminder.type}_${reminder.remainingStations}`
-    if (get().triggeredReminders.includes(triggerKey)) {
-      console.log('[BusStore] 跳过重复提醒', { triggerKey })
+    const state = get()
+    const normalized = normalizeReminder(reminder)
+    const triggerKey = buildTriggerKey(normalized.type, normalized.remainingStations)
+
+    if (state.reminders.some(r => r.id === normalized.id)) {
+      console.log('[BusStore] 跳过重复提醒（id已存在）', { id: normalized.id })
       return
     }
 
-    console.log('[BusStore] 添加提醒', { type: reminder.type, title: reminder.title })
-    set((state) => ({
-      reminders: [reminder, ...state.reminders],
-      triggeredReminders: [...state.triggeredReminders, triggerKey]
-    }))
+    if (state.triggeredReminders.includes(triggerKey)) {
+      console.log('[BusStore] 跳过重复提醒（triggerKey已触发）', { triggerKey })
+      return
+    }
+
+    console.log('[BusStore] 添加提醒', { type: normalized.type, title: normalized.title, id: normalized.id })
+
+    const newReminders = [normalized, ...state.reminders]
+    const newTriggered = [...state.triggeredReminders, triggerKey]
+
+    set({
+      reminders: newReminders,
+      triggeredReminders: newTriggered
+    })
     saveToStorage({
       ...get(),
-      reminders: [reminder, ...get().reminders],
-      triggeredReminders: [...get().triggeredReminders, triggerKey]
+      reminders: newReminders,
+      triggeredReminders: newTriggered
     })
   },
 
@@ -154,8 +209,9 @@ export const useBusStore = create<BusStore>((set, get) => ({
 
   setHandoverRecord: (record) => {
     console.log('[BusStore] 设置交接记录', { childName: record.childName, status: record.status })
-    set({ handoverRecord: record })
-    saveToStorage({ ...get(), handoverRecord: record })
+    const normalized = normalizeHandoverRecord(record)
+    set({ handoverRecord: normalized })
+    saveToStorage({ ...get(), handoverRecord: normalized })
   },
 
   confirmParentReceive: () => {
@@ -163,13 +219,21 @@ export const useBusStore = create<BusStore>((set, get) => ({
     const state = get()
     if (!state.handoverRecord) return
 
-    const newHandover: HandoverRecord = {
+    const newHandover: HandoverRecord = normalizeHandoverRecord({
       ...state.handoverRecord,
       status: 'parent_confirmed',
       parentConfirmTime: new Date().toISOString()
-    }
+    })
 
-    const newHistory = [newHandover, ...state.handoverHistory.filter(h => h.id !== newHandover.id)]
+    const existsInHistory = state.handoverHistory.some(h => h.id === newHandover.id)
+    let newHistory: HandoverRecord[]
+    if (existsInHistory) {
+      newHistory = state.handoverHistory.map(h =>
+        h.id === newHandover.id ? newHandover : h
+      )
+    } else {
+      newHistory = [newHandover, ...state.handoverHistory]
+    }
 
     const newReminders = state.reminders.map(r =>
       r.type === 'arrival' ? { ...r, isRead: true } : r
@@ -235,16 +299,16 @@ export const useBusStore = create<BusStore>((set, get) => ({
 
     const createArrivalIfNeeded = () => {
       if (get().handoverRecord) return
-      const bus = get().busInfo
+      const busData = buildBusInfo()
       const record: HandoverRecord = {
         id: `ho_${generateId()}`,
         childId: childInfo.id,
         childName: childInfo.name,
         stationName: childInfo.boundStationName,
         busId: route.id,
-        plateNumber: bus?.plateNumber,
-        teacherName: bus?.teacherName,
-        pickupLocation: `${childInfo.boundStationName}东门`,
+        plateNumber: busData.plateNumber,
+        teacherName: busData.teacherName,
+        pickupLocation: busData.pickupLocation,
         teacherConfirmTime: new Date().toISOString(),
         status: 'teacher_confirmed'
       }
@@ -254,10 +318,10 @@ export const useBusStore = create<BusStore>((set, get) => ({
         id: `arrival_${generateId()}`,
         type: 'arrival',
         title: `${childInfo.name}已安全下车`,
-        content: `${childInfo.name}已在${childInfo.boundStationName}站安全下车，由${bus?.teacherName || '李老师'}确认交接`,
+        content: `${childInfo.name}已在${childInfo.boundStationName}站安全下车，由${busData.teacherName}确认交接`,
         stationName: childInfo.boundStationName,
         remainingStations: 0,
-        busInfo: buildBusInfo(),
+        busInfo: busData,
         createTime: new Date().toISOString(),
         isRead: false
       }

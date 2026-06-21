@@ -43,7 +43,7 @@ export interface Reminder {
   content: string
   stationName: string
   remainingStations: number
-  busInfo: {
+  busInfo?: {
     plateNumber: string
     teacherName: string
     pickupLocation: string
